@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CardChecker</title>
+    <style>*{box-sizing: border-box;}
+        body{
+            background: rgb(238,174,202);
+            background: radial-gradient(circle, rgba(238,174,202,1) 0%, rgba(148,187,233,1) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        
+        .card{
+            width: 566px;
+            height: 366px;
+            background-color: #eff5f8;
+            border-radius: 20px;
+            box-shadow: 0px 0px 15px 0px rgba(50, 50, 50, 0.5);
+            position: relative;
+            padding: 30px;
+        }
+        
+        
+        .number-container{
+            position: absolute;
+            top: 170px;
+            display: flex;
+        }
+        .number-container input{
+            width: 370px;
+        }
+        .name-container{
+            position: absolute;
+            top: 270px;
+            display: flex;
+        }
+        .name-container input{
+            width: 260px;
+        }
+        
+        
+        input{
+            border: 1px solid #aaa;
+            padding: 2px;
+            font-family: monospace;
+            font-size: 30px;
+            font-weight: 400;
+            color: #555;
+            text-transform: uppercase;
+            background-color: #f6fcff;
+            transition: .3s;
+        }
+        
+        
+        
+        
+        /* Input states */
+        .inputok{
+            border-color: #30b424;
+        }
+        .inputerr{
+            border-color: #fa6364;
+        }
+        
+        /* Status of input */
+        .status{
+            width: 59px;
+            height: 59px;
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 40px 40px;
+            transition: .3s;
+        }
+        
+        /* Status states */
+        .statusok{
+            background-image: url('img/check.png');
+        }
+        .statuserr{
+            background-image: url('img/cross.png');
+        }
+        
+        
+        .pay-system{
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: right;
+        }
+        .pay-system img, .bank img{
+            max-height: 100%;
+            max-width: 100%;
+        }
+        
+        .bank{
+            position: absolute;
+            top: 30px;
+            left: 40px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: right;
+        }</style>
+</head>
+<body>
+    <div class="card" id="app" v-bind:style="{ backgroundColor: activeColor }">
+
+        <!-- Здесь будет выводиться ЛОГОТИП БАНКА -->
+        <div class="bank">
+            <img v-bind:src="bankSys">
+        </div>
+
+        <!-- Поле для ввода НОМЕРА КАРТЫ -->
+        <div class="number-container">
+            <input type="text" v-model="cardNumber" placeholder="Номер карты" v-bind:class="{ inputok: isNumberValid, 'inputerr': !isNumberValid }">
+            <div class="status" v-bind:class="{ statusok: isNumberValid, 'statuserr': !isNumberValid  }"></div>
+        </div>
+
+        <!-- Поле для ввода ИМЕНИ ДЕРЖАТЕЛЯ -->
+        <div class="name-container">
+            <input type="text" v-model="cardUser" placeholder="Имя держателя" v-bind:class="{ inputok: uSettingT, 'inputerr': !uSettingT}">
+            <div class="status" v-bind:class="{ statusok: uSettingT, 'statuserr': !uSettingT  }"></div>
+        </div>
+
+        <!-- Логотип ПЛАТЕЖНОЙ СИСТЕМЫ -->
+        <div class="pay-system">
+            <img v-bind:src="paySys">
+        </div>
+
+    </div>
+
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script>
+        'use strict';
+
+        const vm = new Vue({        
+                el: '#app',        
+                data:
+                {
+                    cardNumber: "",
+                    cardUser: "",
+                    statusOk: false,
+                    inputOk: false,
+                },
+                computed:{
+                    paySys()
+                    {
+                        let firstNum= this.cardNumber[0];
+                        switch(firstNum){
+                            case '2':
+                                return 'img/systems/mir.png';
+                            case '3':
+                                return 'img/systems/american-exp.png';
+                            case '4':
+                                return 'img/systems/visa.png';
+                            case '5':
+                                return 'img/systems/mastercard.png';
+                            case '6':
+                                return 'img/systems/maestro.png';
+                        }
+                    },
+                    isNumberValid(){
+                        let num = this.cardNumber;
+                        // Алгоритм Луна
+                        let sum = 0;
+                        if(num.length==16){
+                            for(let i=num.length-1, j=1; i>=0; i--, j++){
+                                if(j%2==0){
+                                    let mul = parseInt(num[i])*2;
+                                    if(mul<10){
+                                        sum += mul;
+                                    }else{
+                                        sum += mul%10 + Math.floor(mul/10);
+                                    }                        
+                                }else{
+                                    sum += parseInt(num[i]);
+                                }
+                            }
+                            return sum%10==0;
+                        }else{
+                            return false;
+                        }                    
+                    },
+                    uSettingT(){  
+                        let b=false;
+                        let c=0;
+                        let arr = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ';
+                        for(let i=0; i<this.cardUser.length; i++)
+                        {
+                            for(let j=0; j<arr.length; j++)
+                            {
+                                if(this.cardUser[i]==arr[j])
+                                    c++;
+                            }
+                            if(c==0)
+                            {
+                                b=false;
+                                break;
+                            }else{
+                                c=0;
+                                b=true;
+                            }
+                        }  
+                        if(b)
+                            return true;
+                        else    
+                            return false;
+                    },
+                    bankSys()
+                    {
+                        let SixNum= this.cardNumber.substring(0, 6);
+                        console.log(SixNum);
+                        switch(SixNum){
+                            case '521178':
+                                return 'img/banks/alpha.png';
+                            case '548673':
+                                return 'img/banks/alpha.png';
+                            case '548601':
+                                return 'img/banks/alpha.png';
+                            case '415428':
+                                return 'img/banks/alpha.png';
+                            case '676371':
+                                return 'img/banks/alpha.png';
+                            case '477964':
+                                return 'img/banks/alpha.png';
+                            case '479004':
+                                return 'img/banks/alpha.png';
+
+                            case '427229':
+                                return 'img/banks/vtb.png';
+                            case '527883':
+                                return 'img/banks/vtb.png';
+                            case '447520':
+                                return 'img/banks/vtb.png';
+
+                            case '548999':
+                                return 'img/banks/gazprombank.png';
+                            case '526483':
+                                return 'img/banks/gazprombank.png';
+
+                            case '533736':
+                                return 'img/banks/mts-bank.png';
+                            case '540616':
+                                return 'img/banks/mts-bank.png';
+                            
+                            case '434146':
+                                return 'img/banks/otkrytie.png';
+                            case '405870':
+                                return 'img/banks/otkrytie.png';
+                            case '544573':
+                                return 'img/banks/otkrytie.png';
+                            case '532301':
+                                return 'img/banks/otkrytie.png';
+                            
+                            case '440503':
+                                return 'img/banks/rosbank.png';
+                            case '554761':
+                                return 'img/banks/rosbank.png';
+
+                            case '513691':
+                                return 'img/banks/russian_standart.png';
+                            case '510047':
+                                return 'img/banks/russian_standart.png';
+                            
+                            case '462730':
+                                return 'img/banks/raiffaizen.png';
+                            case '462729':
+                                return 'img/banks/raiffaizen.png';
+                            
+                            case '427683':
+                                return 'img/banks/sberbank.png';
+                            case '427901':
+                                return 'img/banks/sberbank.png';
+                            case '427644':
+                                return 'img/banks/sberbank.png';
+                            case '427601':
+                                return 'img/banks/sberbank.png';
+                            case '427901':
+                                return 'img/banks/sberbank.png';
+                            case '427631':
+                                return 'img/banks/sberbank.png';
+                            case '427638':
+                                return 'img/banks/sberbank.png';
+                            case '546938':
+                                return 'img/banks/sberbank.png';
+
+                            case '521324':
+                                return 'img/banks/tinkoff.png';
+                            case '437773':
+                                return 'img/banks/tinkoff.png';
+                        }
+                    },
+                    activeColor()
+                    {
+                        let SixNum= this.cardNumber.substring(0, 6);
+                        console.log(SixNum);
+                        switch(SixNum){
+                            case '521178':
+                                return '#000000';
+                            case '548673':
+                                return '#000000';
+                            case '548601':
+                                return '#000000';
+                            case '415428':
+                                return '#000000';
+                            case '676371':
+                                return '#000000';
+                            case '477964':
+                                return '#000000';
+                            case '479004':
+                                return '#000000';
+
+                            case '427229':
+                                return '#ffffff';
+                            case '527883':
+                                return '#ffffff';
+                            case '447520':
+                                return '#ffffff';
+
+                            case '548999':
+                                return '#c5ac4a';
+                            case '526483':
+                                return '#c5ac4a';
+
+                            case '533736':
+                                return '#cdcbc9';
+                            case '540616':
+                                return '#cdcbc9';
+                            
+                            case '434146':
+                                return '#bbbbbb';
+                            case '405870':
+                                return '#8b898f';
+                            case '544573':
+                                return '#bbbbbb';
+                            case '532301':
+                                return '#8b898f';
+                            
+                            case '440503':
+                                return '#b7aa99';
+                            case '554761':
+                                return '#b7aa99';
+
+                            case '513691':
+                                return '#6fa126';
+                            case '510047':
+                                return '#6fa126';
+                            
+                            case '462730':
+                                return '#e1b072';
+                            case '462729':
+                                return '#e1b072';
+                            
+                            case '427683':
+                                return '#dff4fd';
+                            case '427901':
+                                return '#dff4fd';
+                            case '427644':
+                                return '#dff4fd';
+                            case '427601':
+                                return '#dff4fd';
+                            case '427901':
+                                return '#dff4fd';
+                            case '427631':
+                                return '#dff4fd';
+                            case '427638':
+                                return '#dff4fd';
+                            case '546938':
+                                return '#dff4fd';
+
+                            case '521324':
+                                return '#f5f5f6';
+                            case '437773':
+                                return '#f5f5f6';
+                            default:
+                                return '#eff5f8';
+                        }
+                    },
+                },
+                
+                methods: {
+                    
+                },
+            })
+    </script>
+</html>
